@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "BoidPrimitiveComponent.h"
 
 #include "BoidCluster.generated.h"
 
