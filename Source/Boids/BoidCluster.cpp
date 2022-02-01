@@ -40,7 +40,7 @@ void ABoidCluster::BeginPlay()
 	for (uint32 i = 0; i < BoidCount; i++)
 	{
 		const float Angle = FMath::Rand();
-		BoidVelocities[i] = FVector(FMath::Sin(Angle), FMath::Cos(Angle), FMath::Sin(Angle));
+		BoidVelocities[i] = FVector(FMath::Sin(Angle), FMath::Cos(Angle), FMath::Cos(0));
 	}
 }
 
@@ -56,9 +56,15 @@ void ABoidCluster::Tick(float DeltaTime)
 		BoidPositions[i] += BoidVelocities[i];
 		BoidAccelerations[i] = FVector::ZeroVector;
 
+		if (FVector::Dist(BoidPositions[i], GetActorLocation()) > 1000.f)
+		{
+			BoidPositions[i] = GetActorLocation();
+		}
+
 		FTransform Transform;
-		Transform.SetLocation(BoidPositions[i]);
+		Transform.SetLocation(BoidPositions[i] + GetActorLocation());
 		Transform.SetScale3D(MESH_SCALE);
+		Transform.SetRotation(FQuat(BoidVelocities[i].Rotation() + FRotator(-45.0f))); // FIXME: Rotation doesn't work.
 
 		BoidVisual->UpdateInstanceTransform(i, Transform, true, true);
 	}
@@ -75,18 +81,19 @@ FVector ABoidCluster::SimulateBoid(uint32 CurrentBoid)
 	for (uint32 i = 0; i < BoidCount; i++)
 	{
 		const auto Dist = FVector::Dist(BoidPositions[CurrentBoid], BoidPositions[i]);
-		if (Dist > 0.0f && Dist < BoidMaxNeighborDistance)
+		if (Dist > 0.0f && Dist <= BoidMaxNeighborDistance)
 		{
 			Ali += BoidVelocities[i];
 			Coh += BoidPositions[i];
+
 			NearbyCount++;
 		}
 
-		if (Dist > 0.0f && Dist < BoidDesiredSeparation)
+		if (Dist > 0.0f && Dist <= BoidDesiredSeparation)
 		{
 			auto Diff = BoidPositions[CurrentBoid] - BoidPositions[i];
 			Diff.Normalize();
-			Sep += (Diff / Dist);
+			Sep += (Diff * Dist);
 			NearbySepCount++;
 		}
 	}
@@ -94,14 +101,14 @@ FVector ABoidCluster::SimulateBoid(uint32 CurrentBoid)
 	if (NearbySepCount > 0)
 	{
 		Sep /= (float)NearbySepCount;
-		Sep.Normalize();
+	}
 
-		if (Sep.Size() > 0.0f)
-		{
-			Sep *= MaxSpeed;
-			Sep -= BoidVelocities[CurrentBoid];
-			Sep = Sep.GetClampedToMaxSize(MaxForce);
-		}
+	if (Sep.Size() > 0.0f)
+	{
+		Sep.Normalize();
+		Sep *= MaxSpeed;
+		Sep -= BoidVelocities[CurrentBoid];
+		Sep = Sep.GetClampedToMaxSize(MaxForce);
 	}
 	
 	if (NearbyCount > 0)
@@ -121,7 +128,7 @@ FVector ABoidCluster::SimulateBoid(uint32 CurrentBoid)
 			Coh /= (float)NearbyCount;
 			Coh.Normalize();
 
-			auto Desired = Coh - BoidVelocities[CurrentBoid];
+			auto Desired = Coh - BoidPositions[CurrentBoid];
 			Desired.Normalize();
 			Desired *= MaxSpeed;
 
@@ -130,6 +137,6 @@ FVector ABoidCluster::SimulateBoid(uint32 CurrentBoid)
 		}
 	}
 
-	return (Sep * BoidSeparationWeight) + (Ali * BoidAlignmentWeight) + (Coh * BoidCohesionWeight);
+	return ((Sep * BoidSeparationWeight) + (Ali * BoidAlignmentWeight) + (Coh * BoidCohesionWeight)).GetClampedToMaxSize(MaxSpeed);
 }
 

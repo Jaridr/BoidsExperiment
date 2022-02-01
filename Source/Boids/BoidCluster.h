@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/InstancedStaticMeshComponent.h"
-#include "Boid.h"
 
 #include "BoidCluster.generated.h"
 
