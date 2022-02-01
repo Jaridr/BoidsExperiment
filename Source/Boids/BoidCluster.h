@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "BoidPrimitiveComponent.h"
+
 #include "BoidCluster.generated.h"
 
 UCLASS()
@@ -27,25 +29,28 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Boid Settings")
 	uint32 BoidCount;
 
-	/*
-	UPROPERTY(EditAnyhwere, Category = "Boid Settings")
-	float BoidSpeed;
-	*/
 	UPROPERTY(EditAnywhere, Category = "Boid Settings")
-	float BoidMaxDistanceFromOrigin;
+	float MaxSpeed = 2.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Settings")
-	float BoidSeparation;
+	float MaxForce = 0.03f;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Settings")
-	float BoidAlignment;
+	float BoidMaxNeighborDistance = 30.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Settings")
-	float BoidCohesion;
+	float BoidDesiredSeparation = 25.0f;
 
-	FVector Separation(uint32 CurrentBoid);
-	FVector Alignment(uint32 CurrentBoid);
-	FVector Cohesion(uint32 CurrentBoid);
+	UPROPERTY(EditAnywhere, Category = "Boid Settings")
+	float BoidSeparationWeight;
+
+	UPROPERTY(EditAnywhere, Category = "Boid Settings")
+	float BoidAlignmentWeight;
+
+	UPROPERTY(EditAnywhere, Category = "Boid Settings")
+	float BoidCohesionWeight;
+
+	FVector SimulateBoid(uint32 CurrentBoid);
 
 	TArray<FVector> BoidPositions;
 	TArray<FVector> BoidAccelerations;
