@@ -16,6 +16,8 @@ ABoidCluster::ABoidCluster()
 	BoidVisual = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BoidVisual"));
 	BoidVisual->SetupAttachment(RootComponent);
 
+	// This is work around for UE bug, where some components set in C++ code won't show up in Blueprint editor correctly.
+	// For example the BoidVisual doesn't work correctly and only way to set a static mesh in editor is with this hack.
 	BoidMesh = CreateDefaultSubobject<UStaticMesh>(TEXT("BoidMesh"));
 }
 
@@ -28,9 +30,7 @@ void ABoidCluster::BeginPlay()
 	BoidVelocities.Init(FVector(0.0f, 0.0f, 0.0f), BoidCount);
 	BoidAccelerations.Init(FVector(0.0f, 0.0f, 0.0f), BoidCount);
 
-	FTransform Transform = FTransform(GetActorLocation());
-	Transform.SetRotation(FQuat(FVector(1.0f, 0.0f, 0.0f), 90.0f));
-
+	const FTransform Transform = FTransform(GetActorLocation());
 	TArray<FTransform> Transforms;
 	Transforms.Init(Transform, BoidCount);
 
@@ -56,9 +56,11 @@ void ABoidCluster::Tick(float DeltaTime)
 		BoidPositions[i] += BoidVelocities[i];
 		BoidAccelerations[i] = FVector::ZeroVector;
 
-		if (FVector::Dist(BoidPositions[i], GetActorLocation()) > 1000.f)
+		// This is just a "temporary" hack to avoid some boids running away and never returning.
+		if (FVector::Dist(BoidPositions[i], GetActorLocation()) > MaxBoidTravelDistance)
 		{
 			BoidPositions[i] = GetActorLocation();
+			BoidVelocities[i] *= DeltaTime;
 		}
 
 		FTransform Transform;
@@ -101,14 +103,14 @@ FVector ABoidCluster::SimulateBoid(uint32 CurrentBoid)
 	if (NearbySepCount > 0)
 	{
 		Sep /= (float)NearbySepCount;
-	}
 
-	if (Sep.Size() > 0.0f)
-	{
-		Sep.Normalize();
-		Sep *= MaxSpeed;
-		Sep -= BoidVelocities[CurrentBoid];
-		Sep = Sep.GetClampedToMaxSize(MaxForce);
+		if (Sep.Size() > 0.0f)
+		{
+			Sep.Normalize();
+			Sep *= MaxSpeed;
+			Sep -= BoidVelocities[CurrentBoid];
+			Sep = Sep.GetClampedToMaxSize(MaxForce);
+		}
 	}
 	
 	if (NearbyCount > 0)

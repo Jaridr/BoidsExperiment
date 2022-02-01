@@ -39,6 +39,9 @@ private:
 	float MaxForce = 0.03f;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Settings")
+	float MaxBoidTravelDistance = 2000.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Boid Settings")
 	float BoidMaxNeighborDistance = 30.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Settings")
