@@ -6,12 +6,17 @@
 #include "DrawDebugHelpers.h"
 
 #define DEBUGMESSAGE(x, ...) if(GEngine){GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, FString::Printf(TEXT(x), __VA_ARGS__));}
+#define MESH_SCALE FVector(0.1f, 0.1f, 0.1f)
 
 // Sets default values
 ABoidCluster::ABoidCluster()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	BoidVisual = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("BoidVisual"));
+	BoidVisual->SetupAttachment(RootComponent);
+
+	BoidMesh = CreateDefaultSubobject<UStaticMesh>(TEXT("BoidMesh"));
 }
 
 // Called when the game starts or when spawned
@@ -22,6 +27,15 @@ void ABoidCluster::BeginPlay()
 	BoidPositions.Init(GetActorLocation(), BoidCount);
 	BoidVelocities.Init(FVector(0.0f, 0.0f, 0.0f), BoidCount);
 	BoidAccelerations.Init(FVector(0.0f, 0.0f, 0.0f), BoidCount);
+
+	FTransform Transform = FTransform(GetActorLocation());
+	Transform.SetRotation(FQuat(FVector(1.0f, 0.0f, 0.0f), 90.0f));
+
+	TArray<FTransform> Transforms;
+	Transforms.Init(Transform, BoidCount);
+
+	BoidVisual->AddInstances(Transforms, false);
+	BoidVisual->SetStaticMesh(BoidMesh);
 
 	for (uint32 i = 0; i < BoidCount; i++)
 	{
@@ -41,7 +55,12 @@ void ABoidCluster::Tick(float DeltaTime)
 		BoidVelocities[i] += BoidAccelerations[i];
 		BoidPositions[i] += BoidVelocities[i];
 		BoidAccelerations[i] = FVector::ZeroVector;
-		DrawDebugLine(GetWorld(), BoidPositions[i], BoidPositions[i] + BoidVelocities[i] * 15.0f, FColor::Blue, false, 1.0f, 1, 1.0f);
+
+		FTransform Transform;
+		Transform.SetLocation(BoidPositions[i]);
+		Transform.SetScale3D(MESH_SCALE);
+
+		BoidVisual->UpdateInstanceTransform(i, Transform, true, true);
 	}
 }
 

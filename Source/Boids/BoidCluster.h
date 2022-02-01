@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/InstancedStaticMeshComponent.h"
+#include "Boid.h"
 
 #include "BoidCluster.generated.h"
 
@@ -25,6 +27,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
+	FVector SimulateBoid(uint32 CurrentBoid);
+
+private:
 	UPROPERTY(EditAnywhere, Category = "Boid Settings")
 	uint32 BoidCount;
 
@@ -41,16 +46,19 @@ private:
 	float BoidDesiredSeparation = 25.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Settings")
-	float BoidSeparationWeight;
+	float BoidSeparationWeight = 1.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Settings")
-	float BoidAlignmentWeight;
+	float BoidAlignmentWeight = 1.0f;
 
 	UPROPERTY(EditAnywhere, Category = "Boid Settings")
-	float BoidCohesionWeight;
+	float BoidCohesionWeight = 1.0;
 
-	FVector SimulateBoid(uint32 CurrentBoid);
+	UPROPERTY(EditAnywhere, Category = "Boid Visual")
+	UStaticMesh* BoidMesh;
 
+private:
+	UInstancedStaticMeshComponent* BoidVisual;
 	TArray<FVector> BoidPositions;
 	TArray<FVector> BoidAccelerations;
 	TArray<FVector> BoidVelocities;
