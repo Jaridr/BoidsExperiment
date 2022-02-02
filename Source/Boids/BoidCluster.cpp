@@ -1,5 +1,11 @@
 // (c) Jari Drufhagel.
 
+/*
+ * TODO:
+ * - This could benefit from some kind of space partitioning scheme or multithreading as framerate drops
+ *   with not that high (>1000) boid counts. 1500 boids currently clock at ~7ms and that's bad.
+ * - Scattering boids more efficiently at spawn is a must. There's a significant performance hit because of that.
+ */
 
 #include "BoidCluster.h"
 #include "Components/BoxComponent.h"
@@ -27,7 +33,7 @@ void ABoidCluster::BeginPlay()
 	Super::BeginPlay();
 
 	BoidPositions.Init(GetActorLocation(), BoidCount);
-	BoidVelocities.Init(FVector(0.0f, 0.0f, 0.0f), BoidCount);
+	BoidVelocities.Init(FVector(0.0f, 1.0f, 0.0f), BoidCount);
 	BoidAccelerations.Init(FVector(0.0f, 0.0f, 0.0f), BoidCount);
 
 	const FTransform Transform = FTransform(GetActorLocation());
@@ -36,12 +42,18 @@ void ABoidCluster::BeginPlay()
 
 	BoidVisual->AddInstances(Transforms, false);
 	BoidVisual->SetStaticMesh(BoidMesh);
+	BoidVisual->SetSimulatePhysics(false);
 
+	for (uint32 i = 0; i < BoidCount; i++)
+	{
+		BoidPositions[i] *= FMath::Sin(0.25f + i) * i;
+	}
+	/*
 	for (uint32 i = 0; i < BoidCount; i++)
 	{
 		const float Angle = FMath::Rand();
 		BoidVelocities[i] = FVector(FMath::Sin(Angle), FMath::Cos(Angle), FMath::Cos(0));
-	}
+	}*/
 }
 
 // Called every frame
@@ -60,13 +72,14 @@ void ABoidCluster::Tick(float DeltaTime)
 		if (FVector::Dist(BoidPositions[i], GetActorLocation()) > MaxBoidTravelDistance)
 		{
 			BoidPositions[i] = GetActorLocation();
-			BoidVelocities[i] *= DeltaTime;
+			BoidVelocities[i] *= 0.5f;
 		}
+
 
 		FTransform Transform;
 		Transform.SetLocation(BoidPositions[i] + GetActorLocation());
 		Transform.SetScale3D(MESH_SCALE);
-		Transform.SetRotation(FQuat(BoidVelocities[i].Rotation() + FRotator(-45.0f))); // FIXME: Rotation doesn't work.
+		//Transform.SetRotation(FQuat(BoidVelocities[i].Rotation() + FRotator(-45.0f))); // FIXME: Rotation doesn't work.
 
 		BoidVisual->UpdateInstanceTransform(i, Transform, true, true);
 	}
